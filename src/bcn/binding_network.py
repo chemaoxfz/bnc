@@ -12,65 +12,38 @@ import cvxpy as cp
 
 class rop_ld_regime:
   """
-  The ld_regime object, for a given ld (log derivative or reaction order),
-    there could be multiple dominance regimes (defined by dominance relations in x
-    for a given catalytic activity on top of a binding network).
-  Each ld_regime has possibly several dominance regimes with the same ld.
+  The ld_regime object, for a given ld (log derivative or reaction order), there could be multiple dominance regimes (defined by dominance relations in x for a given catalytic activity on top of a binding network).
+    Each ld_regime has possibly several dominance regimes with the same ld.
 
-  Parameters
-  ----------
-  ld : a tuple of integers
-    the log derivative, or reaction order, of this ld_regime.
-  b_vec : a numpy array vector
-    the b vector defining the activity, b^T x.
-  bn : a binding_network object
-    the binding network that this ld_regime belongs to.
-  is_ray : boolean
-    whether this ld_regime is a ray or not.
-  dom_regime_keys : list of tuples
-    The list of tuples, each tuple is the key for a dominance regime that has
-    reaction order (ld) the same as this ld_regime.
-  dom_regime_dict : dictionary
-    The dictionary with key as the tuple (perm,dom_idx) representing a dominance regime
-     and value of the dominance regime object.
-  neighbors_dict : dictionary
-    The dictionary for ld_regime neighbors of this ld_regime.
-    Has four keys, three of them are "finite", "infinite", and "all",
-      for finite, infinite (ray) ld_regime neighbors, and all of ld_regime
-      neighbors, respectively.
-    For each of these keys, we get a dictionary as well, with ld tuple as key and
-      the ld_regime object as value.
-    The last key is "zero", which maps to neighbors connected via ld_regimes
-      that are zero rays. The value is itself a dictionary with "finite", "infinite",
-      and "all" mapping to dictionaries with (ld:ld_regime) entries.
-  is_feasible : boolean
-    Whether this ld_regime is feasible. It is feasible if it has at least one dom_regime
-    that is feasible.
-  neighbors_constrained_dict : dictionary
-    The dictionaory for ld_regime neighbors of this ld_regime that are feasible
-    under constraints applied to each dom_regime.
-  """
+    Args:
+        ld (tuple of integers): The log derivative, or reaction order, of this ld_regime.
+        b_vec (numpy array vector): The b vector defining the activity, b^T x.
+        bn (binding_network object): The binding network that this ld_regime belongs to.
+        is_ray (boolean): Whether this ld_regime is a ray or not.
+        dom_regime_keys (list of tuples): The list of tuples, each tuple is the key for a dominance regime that has reaction order (ld) the same as this ld_regime.
+        dom_regime_dict (dictionary): The dictionary with key as the tuple (perm, dom_idx) representing a dominance regime and value of the dominance regime object.
+        neighbors_dict (dictionary): The dictionary for ld_regime neighbors of this ld_regime.
+            Has four keys, three of them are "finite", "infinite", and "all",
+            for finite, infinite (ray) ld_regime neighbors, and all of ld_regime neighbors, respectively.
+            For each of these keys, we get a dictionary as well, with ld tuple as key and the ld_regime object as value.
+            The last key is "zero", which maps to neighbors connected via ld_regimes that are zero rays. The value is itself a dictionary with "finite", "infinite", and "all" mapping to dictionaries with (ld: ld_regime) entries.
+        is_feasible (boolean): Whether this ld_regime is feasible. It is feasible if it has at least one dom_regime that is feasible.
+        neighbors_constrained_dict (dictionary): The dictionary for ld_regime neighbors of this ld_regime that are feasible under constraints applied to each dom_regime.
+    """
   # b_vec defines an activity, yielding possibly multiple regimes for each vertex,
   # with logder corresponding to different rows of the vertex logder matrix.
   # ld_regime focus on logder, collapsing the same logder to be the same ld_regime,
   # which may come from different vertices.
   # Each ld_regime has multiple dom_regimes and regions of feasibility.
   def __init__(self,ld,is_ray,b_vec,dom_regime_keys,bn):
-    '''
-    Parameters
-    ----------
-    ld : a tuple of integers
-      the log derivative, or reaction order, of this ld_regime.
-    is_ray : boolean
-      whether this ld_regime is a ray or not.
-    b_vec : a numpy array vector
-      the b vector defining the activity, b^T x.
-    dom_regime_keys : list of tuples
-      The list of tuples, each tuple is the key for a dominance regime that has
-      reaction order (ld) the same as this ld_regime.
-    bn : a binding_network object
-      the binding network that this ld_regime belongs to.
-    '''
+    """
+    Args:
+        ld (tuple of integers): The log derivative, or reaction order, of this ld_regime.
+        is_ray (bool): Whether this ld_regime is a ray or not.
+        b_vec (numpy array): The b vector defining the activity, b^T x.
+        dom_regime_keys (list of tuples): The list of tuples, each tuple is the key for a dominance regime that has reaction order (ld) the same as this ld_regime.
+        bn (binding_network): The binding network that this ld_regime belongs to.
+    """
     self.ld=ld
     self.b_vec=tuple(b_vec)
     self.bn=bn
@@ -127,86 +100,46 @@ class rop_ld_regime:
 
 class rop_dom_regime:
   """
-  A dominance regime (dom_regime) object for a catalytic activity on top of
-    a given binding network defined by b^T x, for some b vector.
-  A dominance regime is labeled by a tuple ((perm),j) where perm is the permutation
-    (a length-n tuple) defining the vertex, and j is the dominant species index
-    in activity b^T x.
+  A dominance regime (dom_regime) object for a catalytic activity on top of a given binding network defined by b^T x, for some b vector.
+    A dominance regime is labeled by a tuple ((perm), j) where perm is the permutation (a length-n tuple) defining the vertex, and j is the dominant species index in activity b^T x.
 
-  Parameters
-  ----------
-  row_idx : integer
-    the integer j indicating x_j is the dominant species in b^T x at this regime.
-  b_vec : numpy array vector
-    The b vector defining the activity b^T x.
-  vertex_perm : tuple of integers
-    The tuple of length d (number of totals of binding network) refering to the
-      dominance vertex that this dom_regime belongs to.
-  vertex : a ROP_vertex object
-    The vertex that this dom_regime belongs to. This dom_regime is at this vertex
-      with an additional dominance condition for the activity.
-  bn : a binding_network object
-    the binding network that this dom_regime belongs to.
-  ld : tuple
-    The reaction order or log derivative of this dom_regime.
-    The row_idx row of the vertex's h_mat.
-  neighbors_dict : dictionary
-    The dictionary for dom_regime neighbors of this dom_regime.
-    Has four keys, three of them are "finite", "infinite", and "all",
-      for finite, infinite (ray) dom_regime neighbors, and all of dom_regime
-      neighbors, respectively.
-    For each of these keys, we get a dictionary as well, with a (perm,row_idx)
-      tuple as key and the dom_regime object as value.
-    The last key is "zero", which maps to neighbors connected via dom_regimes
-      that are zero rays in reaction orders (or log derivative).
-      The value is itself a dictionary with "finite", "infinite",
-      and "all" mapping to dictionaries with (ld:ld_regime) entries.
-  is_feasible : bool
-    Whether this dom_regime is feasible under the last given constraints.
-    If a new set of constraints is given and tested, then this is overwritten.
-  neighbors_constrained_dict : dictionary
-    The dictionaory for ld_regime neighbors of this ld_regime that are feasible
-      under constraints applied to each dom_regime.
-    Same keys as neighbors_dict.
-  
-  c_mat_add_x : numpy array
-    Additional inequalities specifying the condition to reach this 
-      dom_regime on top of the inequalities from its vertex.
-    To be concatenated vertically with vertex.c_mat_x.
-    This is in chart 'x'.
-  c_mat_add_xak : numpy array
-    Additional inequalities specifying the condition to reach this 
-      dom_regime on top of the inequalities from its vertex.
-    To be concatenated vertically with vertex.c_mat_xak.
-    This is in chart 'xak'.
-  c0_vec_add : numpy array
-    Additional intercept vector entries for the inequalities specifying
-      the condition to reach this dom_regime on top of the inequalities
-      from its vertex.
-    To be concatenated vertically with vertex.c0_vec when used to
-      specify inequalities.
-    Same vector for both chart 'x' and 'xak'.
-  c_mat_add_tk : numpy array
-    Additional inequalities specifying this dom_regime on top of the 
-      inequalities from its vertex.
-    To be concatenated vertically with vertex.c_mat_tk.
-    This is in chart 'tk'.
-    Is only meaningful if its vertex is non-singular.
+  Args:
+      row_idx (int): The integer j indicating x_j is the dominant species in b^T x at this regime.
+      b_vec (numpy array): The b vector defining the activity b^T x.
+      vertex_perm (tuple of int): The tuple of length d (number of totals of binding network) referring to the dominance vertex that this dom_regime belongs to.
+      vertex (ROP_vertex): The vertex that this dom_regime belongs to. This dom_regime is at this vertex with an additional dominance condition for the activity.
+      bn (binding_network): The binding network that this dom_regime belongs to.
+      ld (tuple): The reaction order or log derivative of this dom_regime. The row_idx row of the vertex's h_mat.
+      neighbors_dict (dict): The dictionary for dom_regime neighbors of this dom_regime.
+          Has four keys, three of them are "finite", "infinite", and "all",
+          for finite, infinite (ray) dom_regime neighbors, and all of dom_regime neighbors, respectively.
+          For each of these keys, we get a dictionary as well, with a (perm, row_idx) tuple as key and the dom_regime object as value.
+          The last key is "zero", which maps to neighbors connected via dom_regimes that are zero rays in reaction orders (or log derivative).
+          The value is itself a dictionary with "finite", "infinite", and "all" mapping to dictionaries with (ld: ld_regime) entries.
+      is_feasible (bool): Whether this dom_regime is feasible under the last given constraints.
+          If a new set of constraints is given and tested, then this is overwritten.
+      neighbors_constrained_dict (dict): The dictionary for ld_regime neighbors of this ld_regime that are feasible under constraints applied to each dom_regime.
+          Same keys as neighbors_dict.
+      c_mat_add_x (numpy array): Additional inequalities specifying the condition to reach this dom_regime on top of the inequalities from its vertex.
+          To be concatenated vertically with vertex.c_mat_x. This is in chart 'x'.
+      c_mat_add_xak (numpy array): Additional inequalities specifying the condition to reach this dom_regime on top of the inequalities from its vertex.
+          To be concatenated vertically with vertex.c_mat_xak. This is in chart 'xak'.
+      c0_vec_add (numpy array): Additional intercept vector entries for the inequalities specifying the condition to reach this dom_regime on top of the inequalities from its vertex.
+          To be concatenated vertically with vertex.c0_vec when used to specify inequalities.
+          Same vector for both chart 'x' and 'xak'.
+      c_mat_add_tk (numpy array): Additional inequalities specifying this dom_regime on top of the inequalities from its vertex.
+          To be concatenated vertically with vertex.c_mat_tk. This is in chart 'tk'.
+          Is only meaningful if its vertex is non-singular.
   """
   def __init__(self,row_idx,b_vec,vertex_perm,bn):
-    """Initiates a ROP vertex.
+    """
+    Initiates a ROP vertex.
 
-    Parameters
-    ----------
-    row_idx : integer
-      the integer j indicating x_j is the dominant species in b^T x at this regime.
-    b_vec : numpy array vector
-      The b vector defining the activity b^T x.
-    vertex_perm : tuple of integers
-      The tuple of length d (number of totals of binding network) refering to the
-      dominance vertex that this dom_regime belongs to.
-    bn : a binding_network object
-      the binding network that this dom_regime belongs to.
+    Args:
+        row_idx (int): The integer j indicating x_j is the dominant species in b^T x at this regime.
+        b_vec (numpy array): The b vector defining the activity b^T x.
+        vertex_perm (tuple of int): The tuple of length d (number of totals of binding network) referring to the dominance vertex that this dom_regime belongs to.
+        bn (binding_network): The binding network that this dom_regime belongs to.
     """
     self.row_idx=row_idx
     self.b_vec=tuple(b_vec)
@@ -475,39 +408,29 @@ class rop_dom_regime:
     Extra conditions (linear) can be added as c_mat_extra @ var + c0_vec_extra >= 0.
     This is done by adding dom_regime's additional constraints to its vertex's sampling function.
 
-    Parameters
-    ----------
-    nsample : int
-      Number of points to be sampled.
-    chart : str, optional
-      A string indicating the chart that the opt_constraints are specified in.
-      Choices are 'x','xak', and 'tk'.
-    margin : float, optional
-      The dom_regime's feasibility conditions are inequalities, 
-        of the form c_mat*x + c0_vec >= margin (e.g. in 'x' chart),
-        where margin is the margin used here. Default to 0.
-      This can be adjusted to be stronger/weaker requirements on dominance.
-    logmin : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    logmax : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    c_mat_extra : ndarray, shape (n_constraints, n_var)
-      Extra optimization constraints to be added to feasibility conditions,
-        in the form of c_mat_extra @ var + c0_vec_extra >= 0.
-    c0_vec_extra : numpy vector, shape (n_constraints,)
-      Extra optimization constraints to be added to feasibility conditions,
-        in the form of c_mat_extra @ var + c0_vec_extra >=0.
+    Args:
+        nsample (int): Number of points to be sampled.
+        chart (str, optional): A string indicating the chart that the opt_constraints are specified in.
+            Choices are 'x','xak', and 'tk'.
+        margin (float, optional): The dom_regime's feasibility conditions are inequalities, 
+            of the form c_mat*x + c0_vec >= margin (e.g. in 'x' chart),
+            where margin is the margin used here. Defaults to 0.
+            This can be adjusted to be stronger/weaker requirements on dominance.
+        logmin (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to 
+            every variable. 
+            They could also be vectors of length dim_n.
+        logmax (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to 
+            every variable. 
+            They could also be vectors of length dim_n.
+        c_mat_extra (ndarray, shape (n_constraints, n_var)): Extra optimization constraints to be added to feasibility conditions,
+            in the form of c_mat_extra @ var + c0_vec_extra >= 0.
+        c0_vec_extra (numpy vector, shape (n_constraints,)): Extra optimization constraints to be added to feasibility conditions,
+            in the form of c_mat_extra @ var + c0_vec_extra >=0.
 
-    Returns
-    -------
-    sample : ndarray of shape nsample-by-dim_n
-      dim_n is number of species in the binding network.
-      Sampled points satisfying the feasibility conditions of this vertex.
-      Each row (sample[i,:]) is a sampled point.
+    Returns:
+        sample (ndarray of shape nsample-by-dim_n): dim_n is number of species in the binding network.
+            Sampled points satisfying the feasibility conditions of this vertex.
+            Each row (sample[i,:]) is a sampled point.
     """
     # Get the additional constraints for the dom_regime
     c_mat_add,c0_vec_add=self.chart_check_add(chart=chart)
@@ -532,101 +455,82 @@ class rop_dom_regime:
 
 class rop_vertex:
   """
-  A vertex object for reaction order polyhedra.
-  Each binding network has multiple vertices.
+    A vertex object for reaction order polyhedra.
+    Each binding network has multiple vertices.
 
-  Parameters
-  ----------
-  perm : an integer tuple
-    an integer tuple of length dim_d, indicating for each conserved quantity, which species is dominant.
-  bn : a binding_network object
-    The binding network that this vertex belongs to.
-    Has l_mat (conservation law matrix) and n_mat (stoichiometry matrix).
-  p_mat : numpy array, d-by-n
-    d x n matrix with exactly one nonzero entry in each row, of value 1. One-hot representation of perm.
-  p0_vec : numpy array, d-by-1
-    Vector used in (logt, logk) = [p_mat n_mat]' logx + [p0_vec 0]'. 
-    Intercept relating log x  to (logt, logk).
-    n_mat is that of the binding network.
-    p0_vec is all zeros if all entries of bn's l_mat are 0 and 1's.
-  m_mat : numpy array, n-by-n
-    Matrix formed by p_mat and n_mat stacked vertically. 
-    In other words, m_mat = [p_mat n_mat]'.
-    n_mat is that of the binding network.
-  m0_vec : numpy array, n-by-1.
-    Vector used in (logt, logk) = m_mat logx + m0_vec.
-    m0_vec is the same as [p0_vec 0]', i.e. p0_vec vertically 
-      extended with r more zeros.
-  orientation : an integer
-    take value in +1,0,-1. Sign of determinant of [A' N'] matrix.
-  h_mat : numpy array, n-by-n
-    n x n matrix corresponding to the log derivative of this vertex.
-    If finite (non-singular), then this is the log derivative
-    If infinite (singular), then this is the direction that log derivative goes into.
-    At this vertex, we have relation logx = h_mat (logt, logk) + h0_vec.
-    Not always defined, computed and stored once log derivative is 
-      computed by calling self.vertex_ld_calc().
-  h0_vec : numpy array, n-by-1
-    The intercept vector used in the following relation at this vertex:
-      logx = h_mat (logt, logk) + h0_vec.
-    Only defined for finite (non-singular) vertices.
-    Not always defined, computed and stored once log derivative is 
-      computed by calling self.vertex_ld_calc().
-  c_mat_x : numpy array, shape (n_constraints, n_var)
-    Matrix encoding feasibility condition of this vertex in 'x' chart, c_mat_x * logx + c0_vec > 0.
-    If the feasibility condition is considered "asymptotic", i.e. in positive
-      projective measure rather than Lebesgue measure (so a ray is an infinitesimal
-      of volume, not a point), then c0_vec is dropped.
-    Not always defined, computed and stored when used in feasibility tests.
-  c_mat_xak : numpy array, shape (n_constraints, n_var)
-    Matrix encoding feasibility condition of this vertex in 'xak' chart, c_mat_xak * (logxa, logk) + c0_vec > 0.
-    If the feasibility condition is considered "asymptotic", i.e. in positive
-      projective measure rather than Lebesgue measure (so a ray is an infinitesimal
-      of volume, not a point), then c0_vec is dropped.
-    Not always defined, computed and stored when used in feasibility tests.
-  c0_vec : numpy vector, shape (n_constraints,)
-    Numpy vector encoding a part of the feasibility condition of this vertex, same
-      for 'x' chart and 'xak' chart.
-    Not always defined, computed and stored when used in feasibility tests.
-  c_mat_tk : numpy array, shape (n_constraints, n_var)
-    Matrix encoding feasibility condition of this vertex in 'tk' chart, c_mat_tk * (logt, logk) + c0_vec_tk > 0.
-    If the feasibility condition is considered "asymptotic", i.e. in positive
-      projective measure rather than Lebesgue measure (so a ray is an infinitesimal
-      of volume, not a point), then c0_vec_tk is dropped.
-    Only defined for finite (non-singular) vertices.
-    Not always defined, computed and stored when used in feasibility tests.
-  c0_vec_tk : numpy vector, shape (n_constraints,)
-    Numpy vector encoding a part of the feasibility condition of this vertex in the
-      'tk' chart.
-    Only defined for finite (non-singular) vertices.
-    Not always defined, computed and stored when used in feasibility tests.
-  neighbors_dict : dictionary
-    The dictionary for dom_regime neighbors of this dom_regime.
-    Has four keys, three of them are "finite", "infinite", and "all",
-      for finite, infinite (ray) dom_regime neighbors, and all of dom_regime
-      neighbors, respectively.
-    For each of these keys, we get a dictionary as well, with a (perm,row_idx)
-      tuple as key and the dom_regime object as value.
-    The last key is "zero", which maps to neighbors connected via dom_regimes
-      that are zero rays in reaction orders (or log derivative).
-      The value is itself a dictionary with "finite", "infinite",
-      and "all" mapping to dictionaries with (ld:ld_regime) entries.
-  neighbors_constrained_dict : dictionary
-    The dictionaory for ld_regime neighbors of this ld_regime that are feasible
-      under constraints applied to each dom_regime. 
-    Same keys as neighbors_dict.
-  """
+    Args:
+        perm (int tuple): An integer tuple of length dim_d, indicating for each conserved quantity, 
+            which species is dominant.
+        bn (binding_network object): The binding network that this vertex belongs to.
+            Has l_mat (conservation law matrix) and n_mat (stoichiometry matrix).
+        p_mat (numpy array, d-by-n): d x n matrix with exactly one nonzero entry in each row, 
+            of value 1. One-hot representation of perm.
+        p0_vec (numpy array, d-by-1): Vector used in (logt, logk) = [p_mat n_mat]' logx + [p0_vec 0]'. 
+            Intercept relating log x to (logt, logk).
+            n_mat is that of the binding network.
+            p0_vec is all zeros if all entries of bn's l_mat are 0 and 1's.
+        m_mat (numpy array, n-by-n): Matrix formed by p_mat and n_mat stacked vertically. 
+            In other words, m_mat = [p_mat n_mat]'.
+            n_mat is that of the binding network.
+        m0_vec (numpy array, n-by-1): Vector used in (logt, logk) = m_mat logx + m0_vec.
+            m0_vec is the same as [p0_vec 0]', i.e., p0_vec vertically extended with r more zeros.
+        orientation (int): Take value in +1, 0, -1. Sign of determinant of [A' N'] matrix.
+        h_mat (numpy array, n-by-n): n x n matrix corresponding to the log derivative of this vertex.
+            If finite (non-singular), then this is the log derivative.
+            If infinite (singular), then this is the direction that log derivative goes into.
+            At this vertex, we have relation logx = h_mat (logt, logk) + h0_vec.
+            Not always defined, computed and stored once log derivative is 
+            computed by calling self.vertex_ld_calc().
+        h0_vec (numpy array, n-by-1): The intercept vector used in the following relation at this vertex:
+            logx = h_mat (logt, logk) + h0_vec.
+            Only defined for finite (non-singular) vertices.
+            Not always defined, computed and stored once log derivative is 
+            computed by calling self.vertex_ld_calc().
+        c_mat_x (numpy array, shape (n_constraints, n_var)): Matrix encoding feasibility condition of this vertex
+            in 'x' chart, c_mat_x * logx + c0_vec > 0.
+            If the feasibility condition is considered "asymptotic", i.e., in positive
+            projective measure rather than Lebesgue measure (so a ray is an infinitesimal
+            of volume, not a point), then c0_vec is dropped.
+            Not always defined, computed and stored when used in feasibility tests.
+        c_mat_xak (numpy array, shape (n_constraints, n_var)): Matrix encoding feasibility condition of this vertex
+            in 'xak' chart, c_mat_xak * (logxa, logk) + c0_vec > 0.
+            If the feasibility condition is considered "asymptotic", i.e., in positive
+            projective measure rather than Lebesgue measure (so a ray is an infinitesimal
+            of volume, not a point), then c0_vec is dropped.
+            Not always defined, computed and stored when used in feasibility tests.
+        c0_vec (numpy vector, shape (n_constraints,)): Numpy vector encoding a part of the feasibility condition of this vertex,
+            same for 'x' chart and 'xak' chart.
+            Not always defined, computed and stored when used in feasibility tests.
+        c_mat_tk (numpy array, shape (n_constraints, n_var)): Matrix encoding feasibility condition of this vertex
+            in 'tk' chart, c_mat_tk * (logt, logk) + c0_vec_tk > 0.
+            If the feasibility condition is considered "asymptotic", i.e., in positive
+            projective measure rather than Lebesgue measure (so a ray is an infinitesimal
+            of volume, not a point), then c0_vec_tk is dropped.
+            Only defined for finite (non-singular) vertices.
+            Not always defined, computed and stored when used in feasibility tests.
+        c0_vec_tk (numpy vector, shape (n_constraints,)): Numpy vector encoding a part of the feasibility condition of this vertex
+            in the 'tk' chart.
+            Only defined for finite (non-singular) vertices.
+            Not always defined, computed and stored when used in feasibility tests.
+        neighbors_dict (dict): The dictionary for dom_regime neighbors of this dom_regime.
+            Has four keys: "finite", "infinite", "all", and "zero".
+            - "finite", "infinite", and "all" map to dictionaries with (perm, row_idx) tuple as keys 
+              and the dom_regime object as values.
+            - "zero" maps to neighbors connected via dom_regimes that are zero rays in reaction orders 
+              (or log derivative).
+        neighbors_constrained_dict (dict): The dictionary for ld_regime neighbors of this ld_regime that are feasible
+            under constraints applied to each dom_regime. 
+            Same keys as neighbors_dict.
+    """
   def __init__(self,perm,bn):
-    """Initiates a ROP vertex
+    """
+    Initiates a ROP vertex.
 
-    Parameters
-    ----------
-    perm : an integer tuple
-      an integer tuple of length dim_d, indicating for each conserved quantity, which species is dominant.
-
-    bn : a binding network object
-      the binding network that this vertex is a part of.
-      used to get dimensions and stoichiometry matrix.
+    Args:
+        perm (int tuple): An integer tuple of length dim_d, indicating for each conserved quantity, 
+            which species is dominant.
+        bn (binding_network object): The binding network that this vertex is a part of.
+            Used to get dimensions and stoichiometry matrix.
     """
     self.perm=perm
     self.bn=bn
@@ -697,19 +601,14 @@ class rop_vertex:
   def j_func(self,p_mat,l_mat):
     """
     For p_mat and l_mat, find (column) indices that are nonzero in each row of
-      l_mat but not nonzero in p_mat.
+    l_mat but not nonzero in p_mat.
 
-    Parameters
-    ----------
-    p_mat : numpy array
-      d-by-n matrix, each row has only one nonzero entry that is 1.
-    l_mat : numpy array
-      d-by-n matrix, binding network's conservation law matrix.
+    Args:
+        p_mat (numpy array): d-by-n matrix, each row has only one nonzero entry that is 1.
+        l_mat (numpy array): d-by-n matrix, binding network's conservation law matrix.
 
-    Returns
-    -------
-    j_list: list of int
-      List of (column) indices that are nonzero in l_mat but zero in p_mat.
+    Returns:
+        j_list (list of int): List of (column) indices that are nonzero in l_mat but zero in p_mat.
     """
     j_list=[]
     l_mat_masked=np.ma.array(l_mat,mask=p_mat).filled(fill_value=0)
@@ -721,28 +620,21 @@ class rop_vertex:
     """
     For given constraints, compute whether this vertex is feasible.
 
-    Parameters
-    ----------
-    chart : str, optional
-      A string indicating the chart that the opt_constraints are specified in.
-      Choices are 'x','xak', and 'tk'.
-    opt_constraints : list of cvxpy inequalities, optional
-      A list of optimization constraints specified in terms of inequalities
-        relating cvxpy variables of the binding network.
-    positive_threshold : float, optional
-      The vertex itself has inequality conditions, of the form c_mat*x + c0_vec > th,
-        where th is the positive threshold used here. Default to 1e-5.
-    is_asymptotic : boolean, optional
-      Whether the inequalities of the vertex itself should be considered asymptotically
-        or exactly. If asymptotically, then the inequality tested ommits c0_vec,
-        so it is c_mat*x > th. is_asymptotic=True corresponds to inequality satisfied
-        for the positive projective measure (where a ray is an infinitesimal of volume),
-        and is_asymptotic=False is Lebesgue measure (a point is an infinitesimal of volume).
+    Args:
+        chart (str, optional): A string indicating the chart that the opt_constraints are specified in.
+            Choices are 'x','xak', and 'tk'.
+        opt_constraints (list of cvxpy inequalities, optional): A list of optimization constraints specified in terms of inequalities
+            relating cvxpy variables of the binding network.
+        positive_threshold (float, optional): The vertex itself has inequality conditions, of the form c_mat*x + c0_vec > th,
+            where th is the positive threshold used here. Defaults to 1e-5.
+        is_asymptotic (bool, optional): Whether the inequalities of the vertex itself should be considered asymptotically
+            or exactly. If asymptotically, then the inequality tested omits c0_vec,
+            so it is c_mat*x > th. is_asymptotic=True corresponds to inequality satisfied
+            for the positive projective measure (where a ray is an infinitesimal of volume),
+            and is_asymptotic=False is Lebesgue measure (a point is an infinitesimal of volume).
 
-    Returns
-    -------
-    is_feasible: boolean
-       whether this vertex is feasible under the constraints.
+    Returns:
+        is_feasible (bool): Whether this vertex is feasible under the constraints.
     """
     # first prepare the c_mat and c0_vec for the desired chart.
     c_mat,c0_vec=self.chart_check(chart)
@@ -872,20 +764,15 @@ class rop_vertex:
     """
     Prepare the c_mat and c0_vec for the desired chart.
 
-    Parameters
-    ----------
-    chart : str, optional
-      A string indicating the chart that the opt_constraints are specified in.
-      Choices are 'x','xak', and 'tk'.
-    
-    Returns
-    ---------
-    c_mat : ndarray, shape (n_constraints, n_var)
-      matrix used in this vertex's feasibility condition in the 
-        desired chart, e.g. it is c_mat * x + c0_vec > 0 in chart 'x'.
-    c0_vec : ndarray vector, shape (n_constraints,)
-      The vector used in this vertex's feasibility condition in the
-        desired chart, e.g. it is c_mat * x + c0_vec > 0 in chart 'x'.
+    Args:
+        chart (str, optional): A string indicating the chart that the opt_constraints are specified in.
+            Choices are 'x','xak', and 'tk'.
+
+    Returns:
+        c_mat (ndarray, shape (n_constraints, n_var)): Matrix used in this vertex's feasibility condition in the 
+            desired chart, e.g., it is c_mat * x + c0_vec > 0 in chart 'x'.
+        c0_vec (ndarray, shape (n_constraints,)): The vector used in this vertex's feasibility condition in the
+            desired chart, e.g., it is c_mat * x + c0_vec > 0 in chart 'x'.
     """
     if chart=='x':
       try:
@@ -919,40 +806,29 @@ class rop_vertex:
     """
     Compute the vertices of the validity region as a bounded convex hull.
 
-    Parameters
-    ----------
-    chart : str, optional
-      A string indicating the chart that the opt_constraints are specified in.
-      Choices are 'x','xak', and 'tk'.
-    margin : float, optional
-      The vertex's feasibility conditions are inequalities, 
-        of the form c_mat*x + c0_vec >= margin (e.g. in 'x' chart),
-        Margin defaults to 0, and its values are in log10.
-      This can be adjusted to be stronger/weaker requirements on dominance.
-    logmin : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    logmax : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    c_mat_extra : ndarray, shape (n_constraints, n_var)
-      Extra optimization constraints to be added to feasibility conditions,
-        in the form of c_mat_extra @ var + c0_vec_extra >= 0.
-    c0_vec_extra : numpy vector, shape (n_constraints,)
-      Extra optimization constraints to be added to feasibility conditions,
-        in the form of c_mat_extra @ var + c0_vec_extra >=0.
-      
-    Returns
-    -------
-    points : ndarray
-      The points corresponding to vertices of the convex hull that is the 
-        region of validity.
-    feasible_point: ndarray vector
-      The point that is feasible in the interior of the convex hull.
-    hs : scipy.spatial.HalfspaceIntersection object
-      The half space intersection built from the feasibility inequalities.
+    Args:
+        chart (str, optional): A string indicating the chart that the opt_constraints are specified in.
+            Choices are 'x','xak', and 'tk'.
+        margin (float, optional): The vertex's feasibility conditions are inequalities, 
+            of the form c_mat*x + c0_vec >= margin (e.g., in 'x' chart),
+            Margin defaults to 0, and its values are in log10.
+            This can be adjusted to be stronger/weaker requirements on dominance.
+        logmin (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to 
+            every variable. 
+            They could also be vectors of length dim_n.
+        logmax (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to 
+            every variable. 
+            They could also be vectors of length dim_n.
+        c_mat_extra (ndarray, shape (n_constraints, n_var)): Extra optimization constraints to be added to feasibility conditions,
+            in the form of c_mat_extra @ var + c0_vec_extra >= 0.
+        c0_vec_extra (numpy vector, shape (n_constraints,)): Extra optimization constraints to be added to feasibility conditions,
+            in the form of c_mat_extra @ var + c0_vec_extra >=0.
+
+    Returns:
+        points (ndarray): The points corresponding to vertices of the convex hull that is the 
+            region of validity.
+        feasible_point (ndarray vector): The point that is feasible in the interior of the convex hull.
+        hs (scipy.spatial.HalfspaceIntersection): The half space intersection built from the feasibility inequalities.
     """
     
     # first check whether logmin and logmax are scalars or vectors.
@@ -1048,39 +924,29 @@ class rop_vertex:
     Sample points in the vertex's region of validity based on its hull of feasible regions.
     Extra conditions (linear) can be added as c_mat_extra @ var + c0_vec_extra >= 0.
 
-    Parameters
-    ----------
-    nsample : int
-      Number of points to be sampled.
-    chart : str, optional
-      A string indicating the chart that the opt_constraints are specified in.
-      Choices are 'x','xak', and 'tk'.
-    margin : float, optional
-      The vertex's feasibility conditions are inequalities, 
-        of the form c_mat*x + c0_vec >= margin (e.g. in 'x' chart),
-        where margin is the margin used here. Default to 0.
-      This can be adjusted to be stronger/weaker requirements on dominance.
-    logmin : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    logmax : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    c_mat_extra : ndarray, shape (n_constraints, n_var)
-      Extra optimization constraints to be added to feasibility conditions,
-        in the form of c_mat_extra @ var + c0_vec_extra >= 0.
-    c0_vec_extra : numpy vector, shape (n_constraints,)
-      Extra optimization constraints to be added to feasibility conditions,
-        in the form of c_mat_extra @ var + c0_vec_extra >=0.
+    Args:
+        nsample (int): Number of points to be sampled.
+        chart (str, optional): A string indicating the chart that the opt_constraints are specified in.
+            Choices are 'x','xak', and 'tk'.
+        margin (float, optional): The vertex's feasibility conditions are inequalities, 
+            of the form c_mat*x + c0_vec >= margin (e.g., in 'x' chart),
+            where margin is the margin used here. Defaults to 0.
+            This can be adjusted to be stronger/weaker requirements on dominance.
+        logmin (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to 
+            every variable. 
+            They could also be vectors of length dim_n.
+        logmax (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to 
+            every variable. 
+            They could also is vectors of length dim_n.
+        c_mat_extra (ndarray, shape (n_constraints, n_var)): Extra optimization constraints to be added to feasibility conditions,
+            in the form of c_mat_extra @ var + c0_vec_extra >= 0.
+        c0_vec_extra (numpy vector, shape (n_constraints,)): Extra optimization constraints to be added to feasibility conditions,
+            in the form of c_mat_extra @ var + c0_vec_extra >=0.
 
-    Returns
-    -------
-    sample : ndarray of shape nsample-by-dim_n
-      dim_n is number of species in the binding network.
-      Sampled points satisfying the feasibility conditions of this vertex.
-      Each row (sample[i,:]) is a sampled point.
+    Returns:
+        sample (ndarray of shape nsample-by-dim_n): dim_n is number of species in the binding network.
+            Sampled points satisfying the feasibility conditions of this vertex.
+            Each row (sample[i,:]) is a sampled point.
     """
     # first compute the convex hull for this vertex's validity and get the vertex points.
     points,hull,_,_=self.vertex_hull_of_validity(chart=chart,margin=margin,logmin=logmin,logmax=logmax,c_mat_extra=c_mat_extra,c0_vec_extra=c0_vec_extra)
@@ -1100,22 +966,16 @@ class rop_vertex:
     """
     Create uniform sample over convex hulls by Delaunay triangulation.
     Adapted from https://stackoverflow.com/questions/59073952/how-to-get-uniformly-distributed-points-in-convex-hull
-    
-    Parameters
-    ----------
-    points : ndarray, shape (num_points,dim).
-      Points whose convex hull is to be sampled uniformly.
-    nsample : int
-      Number of points to be sampled.
-    points_are_vertices : bool, optional
-      If True, points are assumed to be vertices.
-      If False, convex hull of points is first taken to find vertices.
-      Defaults to False.
 
-    Returns
-    -------
-    sample : ndarray, shape (nsample, dim).
-      sampled points uniformly in convex hull of points.
+    Args:
+        points (ndarray, shape (num_points, dim)): Points whose convex hull is to be sampled uniformly.
+        nsample (int): Number of points to be sampled.
+        points_are_vertices (bool, optional): If True, points are assumed to be vertices.
+            If False, convex hull of points is first taken to find vertices.
+            Defaults to False.
+
+    Returns:
+        sample (ndarray, shape (nsample, dim)): Sampled points uniformly in convex hull of points.
     """
     dims = points.shape[-1]
     if points_are_vertices:
@@ -1130,18 +990,15 @@ class rop_vertex:
 
   def vertex_print_validity_condition(self,is_asymptotic=False):
     """
-    print the expression for t=x, x(t,k) and inequalities for the
-    region of validity given a regime, using the labels of x,t,k.
+    Print the expression for t=x, x(t,k) and inequalities for the region of validity 
+    given a regime, using the labels of x, t, k.
 
-    Parameters
-    ----------
-    is_asymptotic : boolean, optional
-      If False, the inequalities are shown with intercept.
-      If True, the inequalities are shown without intercept.
+    Args:
+        is_asymptotic (bool, optional): If False, the inequalities are shown with intercept.
+            If True, the inequalities are shown without intercept.
 
-    Returns
-    -------
-    None, but print a lot of text.
+    Returns:
+        None: Prints a lot of text.
     """
     try:
       c_mat=self.c_mat_tk
@@ -1209,81 +1066,6 @@ class rop_vertex:
 
 
 class binding_network:
-  """A binding network object.
-
-  Parameters
-  ----------
-  n_mat : numpy array
-    The stoichiometry matrix defining the binding network.
-  is_atomic: 'bool'
-    Is the binding network atomic or not.
-  l_mat : numpy array
-    The conservation law matrix defining the conserved total quantities.
-    If the network is atomic, it can be directly computed from n_mat.
-  l_mat_sym
-
-  dim_n : 'int'
-    The number of chemical species, same as number of columns of n_mat and l_mat.
-  dim_r : 'int'
-    The number of (linearly independent) binding reactions, same as number of rows of n_mat.
-  dim_d : 'int'
-    The number of conserved quantities or totals, same as the number of rows of l_mat.
-  x_sym : list of symbols
-    An ordered list of symbols for the chemical species, denoting columns of the n_mat and l_mat.
-  t_sym : list of symbols
-    An ordered list of symbols for the total or conserved quantities, denoting rows of the l_mat.
-  k_sym : list of symbols
-    An ordered list of symbols for the binding constants in the dissociation direction, denoting rows of the n_mat.
-  tk_sym : list of symbols
-    An ordered list of symbols concatenating (t_sym, k_sym).
-    Just for convenience when (t_sym, k_sym) needs to be called together.
-  opt_var : list of cvxpy variables of length dim_n
-    The cvxpy variables to be used for testing for feasibility etc in 
-      optimization problems.
-  m_mat : numpy array, n-by-n
-    Concatenation of l_mat and n_mat vertically.
-  orientation : 'int'
-    Take value from {-1,0,+1}.
-    This is the sign of m_mat's determinant.
-  activity_regime_dict : dictionary
-    Dictionary of dom_regimes for various activities on top of the 
-      binding network.
-    Keys are b_vec, the vectors defining different catalytic activities
-      on top of the binding network.
-    The value are dictionaries of dom_regimes, with keys 'finite', 
-      'infinite', and 'all', and values are {(perm,row_idx):dom_regime}
-      pairs.
-    For example, activity_regime_dict[b_vec]['all'][(perm,row_idx)]
-      yields a dom_regime object.
-    Initializes as an empty dictionary.
-    Computed by calling self.activity_regime_construct(b_vec).
-  activity_ld_regime_dict : dictionary
-    Dictionary of ld_regimes for various activities on top of the
-      binding network.
-    Keys are b_vec, the vectors defining different catalytic activities
-      on top of the binding network.
-    The value are dictionaries of dom_regimes, with keys 'finite', 
-      'infinite', and 'all', and values are {ld:ld_regime} pairs.
-    For example, activity_ld_regime_dict[b_vec]['all'][(perm,row_idx)]
-      yields a dom_regime object.
-    Initializes as an empty dictionary.
-    Computed by calling self.activity_regime_construct(b_vec).
-  activity_regime_constrained_dict : dictionary
-    Dictionary of dom_regimes feasible under given constraints for 
-      various activities.
-    Same format as activity_regime_dict.
-    Initializes as an empty dictionary.
-    Computed by calling self.activity_regime_construct(b_vec,opt_constraints).
-    Once a new opt_constraints is used, this dict is overwritten.
-  activity_ld_regime_constrained_dict
-    Dictionary of ld_regimes feasible under given constraints for 
-      various activities.
-    Same format as activity_regime_dict.
-    Initializes as an empty dictionary.
-    Computed by calling self.activity_regime_construct(b_vec,opt_constraints).
-    Once a new opt_constraints is used, this dict is overwritten.
-  """
-
   def __init__(self,
                n_mat,
                l_mat=np.array([]),
@@ -1291,24 +1073,17 @@ class binding_network:
                x_sym=np.array([]),
                t_sym=np.array([]),
                k_sym=np.array([])):
-    """Initiate a binding network.
+    """
+    Initiate a binding network.
 
-    Parameters
-    ----------
-    n_mat : numpy array
-        The stoichiometry matrix defining the binding network.
-    is_atomic: 'bool', optional
-        Is the binding network atomic or not.
-    l_mat : numpy array, optional
-        The conservation law matrix defining the conserved total quantities.
-        If not given, and is_atomic is True, then it will be computed 
-          from n_mat.
-    x_sym : list of symbols, optional
-        An ordered list of symbols for the chemical species, denoting columns of the n_mat and l_mat.
-    t_sym : list of symbols, optional
-        An ordered list of symbols for the total or conserved quantities, denoting rows of the l_mat.
-    k_sym : list of symbols, optional
-        An ordered list of symbols for the binding constants in the dissociation direction, denoting rows of the n_mat.
+    Args:
+        n_mat (numpy array): The stoichiometry matrix defining the binding network.
+        is_atomic (bool, optional): Is the binding network atomic or not. Defaults to None.
+        l_mat (numpy array, optional): The conservation law matrix defining the conserved total quantities.
+            If not given, and is_atomic is True, then it will be computed from n_mat. Defaults to None.
+        x_sym (list of symbols, optional): An ordered list of symbols for the chemical species, denoting columns of the n_mat and l_mat. Defaults to None.
+        t_sym (list of symbols, optional): An ordered list of symbols for the total or conserved quantities, denoting rows of the l_mat. Defaults to None.
+        k_sym (list of symbols, optional): An ordered list of symbols for the binding constants in the dissociation direction, denoting rows of the n_mat. Defaults to None.
     """
     self.is_atomic=is_atomic
     self.n_mat=n_mat
@@ -1344,18 +1119,15 @@ class binding_network:
     self.activity_ld_regime_constrained_dict={}
 
   def l_from_n(self,n_mat):
-    """if the network is atomic, compute the L matrix from the N matrix
+    """
+    If the network is atomic, compute the L matrix from the N matrix.
 
-    Parameters
-    ----------
-    n_mat : numpy array
-        The stoichiometry matrix defining the binding network.
-        Assumes the columns are ordered so that the atomic species come first.
+    Args:
+        n_mat (numpy array): The stoichiometry matrix defining the binding network.
+            Assumes the columns are ordered so that the atomic species come first.
 
-    Returns
-    -------
-    l_mat: numpy array
-       The conservation law or totals matrix.
+    Returns:
+        numpy array: The conservation law or totals matrix.
     """
     assert self.is_atomic
     r=n_mat.shape[0]
@@ -1367,31 +1139,23 @@ class binding_network:
     return l_mat
 
   def logder_num(self,logvar,chart='x',a_mat=np.array([])):
-    """compute the numerical log derivative of the binding network at points 
-      specified by logvar in specified chart and dominance a_mat.
+    """
+    Compute the numerical log derivative of the binding network at points specified by logvar in the specified chart and dominance a_mat.
 
-    Parameters
-    ----------
-    logvar : ndarray n_points-by-dim_n
-      Array of the points to evaluate the log derivatives at, in base-10 log.
-      In chart 'x', for example, this is logx. 
-    chart : str
-      Specifying the chart that logvar is specified in, could be 'x','xak','tk'.
-    a_mat : numpy array, optional
-      Matrix defining the variables log derivative is taken in terms of.
-      Assumes all entries are non-negative, and each row has at least one positive entry.
-      Optional, defaults to l_mat of the binding network.
+    Args:
+        logvar (ndarray): Array of the points to evaluate the log derivatives at, in base-10 log. Shape is (n_points, dim_n).
+            In chart 'x', for example, this is logx.
+        chart (str): Specifying the chart that logvar is specified in. Could be 'x', 'xak', or 'tk'.
+        a_mat (numpy array, optional): Matrix defining the variables log derivative is taken in terms of.
+            Assumes all entries are non-negative, and each row has at least one positive entry.
+            Optional, defaults to l_mat of the binding network.
 
-    Returns
-    -------
-    logder: ndarray, shape (n_points,dim_n,dim_n)
-      array of n-by-n matrix of log derivative of x to (t,k), where 
-        t=a_mat@x, n is number of species.
-    logx : ndarray, shape (n_points,dim_n)
-      array of logx that the logvar points correspond to.
-        This is returned since all input var, regardless of chart,
-        is mapped to logx chart first. 
-        So we also return this for convenience.
+    Returns:
+        logder (ndarray): Array of n-by-n matrix of log derivative of x to (t, k), where t = a_mat @ x, and n is the number of species.
+            Shape is (n_points, dim_n, dim_n).
+        logx (ndarray): Array of logx that the logvar points correspond to. Shape is (n_points, dim_n).
+            This is returned since all input variables, regardless of chart, are mapped to the logx chart first.
+            Returned for convenience.
     """
     # first check a_mat makes sense.
     if not np.any(a_mat): # no a_mat argument is given
@@ -1422,21 +1186,17 @@ class binding_network:
     return logders,logx
 
   def logder_x_num(self,logx,a_mat):
-    """compute the numerical log derivative of the binding network at one point in chart x.
+    """
+    Compute the numerical log derivative of the binding network at one point in chart x.
 
-    Parameters
-    ----------
-    logx : numpy vector
-      Vector of concentrations for all the species in log, base-10.
-    a_mat : numpy array
-      Matrix defining the variables log derivative is taken in terms of.
-      Assumes all entries are non-negative, and each row has at least one positive entry.
+    Args:
+        logx (numpy vector): Vector of concentrations for all the species in log, base-10.
+        a_mat (numpy array): Matrix defining the variables log derivative is taken in terms of.
+            Assumes all entries are non-negative, and each row has at least one positive entry.
 
-    Returns
-    -------
-    logder: ndarray, shape (n_points,dim_n,dim_n)
-      array of n-by-n matrix of log derivative of x to (t,k), where 
-        t=a_mat@x, n is number of species.
+    Returns:
+        ndarray: Array of n-by-n matrix of log derivative of x to (t, k), where t = a_mat @ x, and n is the number of species.
+            Shape is (n_points, dim_n, dim_n).
     """
     x=10**logx
     t_inv = 1/(a_mat.dot(x))
@@ -1453,31 +1213,22 @@ class binding_network:
     return np.linalg.inv(logder_inv)
 
   def logder_xak_num(self,logxak,a_mat):
-    """compute the numerical log derivative of dlog(x)/dlog(a_mat*x,k) at a point
-    specified by log(xa,k), where xa is concentration of atomic species,
-    k is binding constants. log is base 10.
-    Assumes the network is atomic, and n_mat,a_mat have atomic species coming first.
+    """
+    Compute the numerical log derivative of dlog(x)/dlog(a_mat * x, k) at a point specified by log(xa, k), where xa is the concentration of atomic species, and k is the binding constants. log is base 10.
+        Assumes the network is atomic, and n_mat, a_mat have atomic species coming first.
 
-    Parameters
-    ----------
-    logxak : numpy vector, shape (dim_n,)
-      Vector numerical value for atomic species concentration (first dim_d 
-        entries) and binding reaction constants (last dim_r entries). 
-      log is base 10.
-    a_mat : a_mat : numpy array.
-      Matrix defining the variables log derivative is taken in terms of.
-      Assumes all entries are non-negative, and each row has at least one positive entry.
+    Args:
+        logxak (numpy vector): Vector numerical value for atomic species concentration (first dim_d entries) and binding reaction constants (last dim_r entries). Shape is (dim_n,).
+            log is base 10.
+        a_mat (numpy array): Matrix defining the variables log derivative is taken in terms of.
+            Assumes all entries are non-negative, and each row has at least one positive entry.
 
-    Returns
-    -------
-    logder: ndarray, shape (n_points,dim_n,dim_n)
-      array of n-by-n matrix of log derivative of x to (t,k), where 
-        t=a_mat@x, n is number of species.
-    logx : ndarray, shape (n_points,dim_n)
-      array of logx that the logvar points correspond to.
-        This is returned since all input var, regardless of chart,
-        is mapped to logx chart first. 
-        So we also return this for convenience.
+    Returns:
+        logder (ndarray): Array of n-by-n matrix of log derivative of x to (t, k), where t = a_mat @ x, and n is the number of species.
+            Shape is (n_points, dim_n, dim_n).
+        logx (ndarray): Array of logx that the logvar points correspond to. Shape is (n_points, dim_n).
+            This is returned since all input variables, regardless of chart, are mapped to the logx chart first.
+            Returned for convenience.
     """
     ## commented out are old code that directly calculate logx, now we use stored map.
     # d=self.dim_d
@@ -1492,60 +1243,45 @@ class binding_network:
     return self.logder_x_num(logx,a_mat),logx
 
   def logder_tk_num(self,logtk,a_mat):
-    """compute the numerical log derivative of dlog(x)/dlog(a_mat@x,k) at a point
-    specified by log(t,k), where t=a_mat@x is concentration of atomic species,
-    k is binding constants. log is base 10.
+    """
+    Compute the numerical log derivative of dlog(x)/dlog(a_mat @ x, k) at a point specified by log(t, k), where t = a_mat @ x is the concentration of atomic species, and k is the binding constants. log is base 10.
 
-    Parameters
-    ----------
-    logtk : numpy vector, shape (dim_n,)
-      Vector numerical value for total concentration (first dim_d 
-        entries) and binding reaction constants (last dim_r entries). 
-      log is base 10.
-    a_mat : a_mat : numpy array.
-      Matrix defining the variables log derivative is taken in terms of.
-      Assumes all entries are non-negative, and each row has at least one positive entry.
+    Args:
+        logtk (numpy vector): Vector numerical value for total concentration (first dim_d entries) and binding reaction constants (last dim_r entries). Shape is (dim_n,).
+            log is base 10.
+        a_mat (numpy array): Matrix defining the variables log derivative is taken in terms of.
+            Assumes all entries are non-negative, and each row has at least one positive entry.
 
-    Returns
-    -------
-    logder: ndarray, shape (n_points,dim_n,dim_n)
-      array of n-by-n matrix of log derivative of x to (t,k), where 
-        t=a_mat@x, n is number of species.
-    logx : ndarray, shape (n_points,dim_n)
-      array of logx that the logvar points correspond to.
-        This is returned since all input var, regardless of chart,
-        is mapped to logx chart first. 
-        So we also return this for convenience.
+    Returns:
+        logder (ndarray): Array of n-by-n matrix of log derivative of x to (t, k), where t = a_mat @ x, and n is the number of species.
+            Shape is (n_points, dim_n, dim_n).
+        logx (ndarray): Array of logx that the logvar points correspond to. Shape is (n_points, dim_n).
+            This is returned since all input variables, regardless of chart, are mapped to the logx chart first.
+            Returned for convenience.
     """
     logx=self.tk2x_num(logtk,a_mat)
     return self.logder_x_num(logx,a_mat),logx
 
   def logder_activity_num(self,b_vec,logx_array,ld_mat_array):
-    """given a logder matrix, compute the logder of b^T x.
+    """
+    Given a logder matrix, compute the logder of b^T x.
 
-    Parameters
-    ----------
-    b_vec : numpy vector, shape (dim_n,)
-      Vector indicating which species are included in the catalytic activity.
-      All entries are non-negative, with at least one nonzero.
-    logx_array : ndarray, shape (n_points,dim_n)
-      array of logx-vector indicating the point at which the 
-      logder is evaluated. log is base 10.
-    ld_mat_array : ndarray, shape (n_points,dim_n,dim_n)
-      array of n x n matrix for dlogx/dlog(t,k) at point x
-        on the manifold.
+    Args:
+        b_vec (numpy vector): Vector indicating which species are included in the catalytic activity. Shape is (dim_n,).
+            All entries are non-negative, with at least one nonzero.
+        logx_array (ndarray): Array of logx-vector indicating the point at which the logder is evaluated. Shape is (n_points, dim_n).
+            log is base 10.
+        ld_mat_array (ndarray): Array of n x n matrix for dlogx/dlog(t, k) at point x on the manifold. Shape is (n_points, dim_n, dim_n).
 
-    Returns
-    -------
-    ld_activity: ndarray, shape (n_points,dim_n)
-       array of vectors for dlog(b^T x)/dlog(t,k)
+    Returns:
+        ndarray: Array of vectors for dlog(b^T x)/dlog(t, k). Shape is (n_points, dim_n).
     """
     assert np.all(b_vec>=0), "all entries of b_vec should be non-negative."
     assert np.sum(b_vec)>0, "there should be at least one nonzero entry in b_vec."
     x_array=10**logx_array # shape (n_points,dim_n)
     bx_array=x_array*b_vec # each row element-wise product with b_vec
     # so bx_array has shape (n_points,dim_n)
-    coeff=(bx_array.T/np.sum(bx_array,axis=1)).T * np.log(10) # shape (n_points,dim_n)
+    coeff=(bx_array.T/np.sum(bx_array,axis=1)).T # shape (n_points,dim_n)
     npts=logx_array.shape[0]
     
     # One implementation is iterate and sum, this is slow (not really?).
@@ -1562,36 +1298,31 @@ class binding_network:
     return ld_activity
 
   def x2tk_num(self,logx):
-    """compute the (logt,logk) value given logx
+    """
+    Compute the (logt, logk) value given logx.
 
-    Parameters
-    ----------
-    logx : numpy vector
-      Vector numerical value for total variables that define the x point.
+    Args:
+        logx (numpy vector): Vector numerical value for total variables that define the x point.
 
-    Returns
-    -------
-    logt,logk: numpy vector
-      The numerical value of x at this point. log is base 10.
+    Returns:
+        tuple: A tuple containing two numpy vectors:
+            - logt: The numerical value of total concentration at this point. log is base 10.
+            - logk: The numerical value of binding constants at this point. log is base 10.
     """
     logt=np.log10(self.l_mat.dot(10**logx))
     logk=self.n_mat.dot(logx)
     return logt,logk
 
   def xak2x_num(self,logxak):
-    """compute the logx value given logxak=(logxa,logk)
+    """
+    Compute the logx value given logxak = (logxa, logk).
 
-    Parameters
-    ----------
-    logxak : numpy vector, shape (dim_n,)
-      Vector numerical value for atomic species concentration (first dim_d 
-        entries) and binding reaction constants (last dim_r entries). 
-      log is base 10.
+    Args:
+        logxak (numpy vector): Vector numerical value for atomic species concentration (first dim_d entries) and binding reaction constants (last dim_r entries). Shape is (dim_n,).
+            log is base 10.
 
-    Returns
-    -------
-    logx: numpy vector
-      The numerical value of logx at this point.
+    Returns:
+        numpy vector: The numerical value of logx at this point.
     """
     try: xak2x_map=self.xak2x_map
     except AttributeError:
@@ -1612,24 +1343,17 @@ class binding_network:
     self.xak2x_map=temp
 
   def tk2x_num(self,logtk,a_mat):
-    """compute the logx value by numerical integration along the equilibrium manifold 
-    using log derivatives. The point on the manifold defined by logtk=(logt,logk) is
-    the same as that defined by logx.
+    """
+    Compute the logx value by numerical integration along the equilibrium manifold using log derivatives. The point on the manifold defined by logtk = (logt, logk) is the same as that defined by logx.
 
-    Parameters
-    ----------
-    logtk : numpy vector, shape (dim_n,)
-      Vector numerical value for total variables (in first dim_d entries) and 
-       the binding reactino constants (in last dim_r entries) that define the point. 
-       p_(logx) = p_(logt,logk). log is base 10.
-    a_mat: numpy array
-      The matrix defining the total variables t=a_mat@x that the log derivatives are taken with respect to.
-      Default should be specified to be self.l_mat.
+    Args:
+        logtk (numpy vector): Vector numerical value for total variables (in first dim_d entries) and the binding reaction constants (in last dim_r entries) that define the point. 
+            p_(logx) = p_(logt, logk). Shape is (dim_n,). log is base 10.
+        a_mat (numpy array): The matrix defining the total variables t = a_mat @ x that the log derivatives are taken with respect to.
+            Default should be specified to be self.l_mat.
 
-    Returns
-    -------
-    logx: numpy vector
-      The numerical value of x at this point. log is base 10.
+    Returns:
+        numpy vector: The numerical value of x at this point. log is base 10.
     """
 
     # the initial point is always x=1, (t,k) = (A*1, 1)
@@ -1653,31 +1377,23 @@ class binding_network:
     return logx
 
   def logder_tk2x_num(self,logvar,chart='x',a_mat=np.array([])):
-    """compute the numerical dlog(t,k)/dlog(x) log derivative of the binding network at points 
-      specified by logvar in specified chart and dominance a_mat.
+    """
+    Compute the numerical dlog(t, k)/dlog(x) log derivative of the binding network at points specified by logvar in the specified chart and dominance a_mat.
 
-    Parameters
-    ----------
-    logvar : ndarray n_points-by-dim_n
-      Array of the points to evaluate the log derivatives at, in base-10 log.
-      In chart 'x', for example, this is logx. 
-    chart : str
-      Specifying the chart that logvar is specified in, could be 'x','xak','tk'.
-    a_mat : numpy array, optional
-      Matrix defining the variables log derivative is taken in terms of.
-      Assumes all entries are non-negative, and each row has at least one positive entry.
-      Optional, defaults to l_mat of the binding network.
+    Args:
+        logvar (ndarray): Array of the points to evaluate the log derivatives at, in base-10 log. Shape is (n_points, dim_n).
+            In chart 'x', for example, this is logx.
+        chart (str): Specifying the chart that logvar is specified in. Could be 'x', 'xak', or 'tk'.
+        a_mat (numpy array, optional): Matrix defining the variables log derivative is taken in terms of.
+            Assumes all entries are non-negative, and each row has at least one positive entry.
+            Optional, defaults to l_mat of the binding network.
 
-    Returns
-    -------
-    logder: ndarray, shape (n_points,dim_n,dim_n)
-      array of n-by-n matrix of log derivative of (t,k) to x, where 
-        t=a_mat@x, n is number of species.
-    logx : ndarray, shape (n_points,dim_n)
-      array of logx that the logvar points correspond to.
-        This is returned since all input var, regardless of chart,
-        is mapped to logx chart first. 
-        So we also return this for convenience.
+    Returns:
+        logder (ndarray): Array of n-by-n matrix of log derivative of (t, k) to x, where t = a_mat @ x, and n is the number of species.
+            Shape is (n_points, dim_n, dim_n).
+        logx (ndarray): Array of logx that the logvar points correspond to. Shape is (n_points, dim_n).
+            This is returned since all input variables, regardless of chart, are mapped to the logx chart first.
+            Returned for convenience.
     """
     # first check a_mat makes sense.
     if not np.any(a_mat): # no a_mat argument is given
@@ -1710,22 +1426,17 @@ class binding_network:
     return logders,logx
 
   def logder_tk2x_x_num(self,logx,a_mat):
-    """compute the numerical dlog(t,k)/dlog(x) 
-    log derivative of the binding network at one point in chart x.
+    """
+    Compute the numerical dlog(t, k)/dlog(x) log derivative of the binding network at one point in chart x.
 
-    Parameters
-    ----------
-    logx : numpy vector
-      Vector of concentrations for all the species in log, base-10.
-    a_mat : numpy array
-      Matrix defining the variables log derivative is taken in terms of.
-      Assumes all entries are non-negative, and each row has at least one positive entry.
+    Args:
+        logx (numpy vector): Vector of concentrations for all the species in log, base-10.
+        a_mat (numpy array): Matrix defining the variables log derivative is taken in terms of.
+            Assumes all entries are non-negative, and each row has at least one positive entry.
 
-    Returns
-    -------
-    logder: ndarray, shape (n_points,dim_n,dim_n)
-      array of n-by-n matrix of log derivative of (t,k) to x, where 
-        t=a_mat@x, n is number of species.
+    Returns:
+        ndarray: Array of n-by-n matrix of log derivative of (t, k) to x, where t = a_mat @ x, and n is the number of species.
+            Shape is (n_points, dim_n, dim_n).
     """
     x=10**logx
     t_inv = 1/(a_mat.dot(x))
@@ -1748,21 +1459,15 @@ class binding_network:
 
   def vertex_construct(self):
     """
-    Construct the rop_vertex objects that this binding network can have,
-      compute their orientation and feasibility (without additional 
-      constraints), and store them in self.vertex_dict.
-    Then the vertices' neighbors, log derivative, and c_mat_xak
-      are computed and stored in these objects.
+    Construct the rop_vertex objects that this binding network can have, compute their orientation and feasibility (without additional constraints), and store them in self.vertex_dict.
+    Then the vertices' neighbors, log derivative, and c_mat_xak are computed and stored in these objects.
 
-    Parameters
-    ----------
-    None.
+    Args:
+        None.
 
-    Returns
-    -------
-    None. The vertices are recorded in self.vertex_dict and by updating
-      the vertex objects.
-    """
+    Returns:
+        None. The vertices are recorded in self.vertex_dict and by updating the vertex objects.
+"""
     # Construct a dictionary of reachable vertices.
     # because l_mat tends to be sparse, we iterate through its rows to get nonzero indices,
     # then each vertex's dominance condition a_mat is choosen from the nonezro indices.
@@ -1839,17 +1544,13 @@ class binding_network:
 
   def vertex_construct_direct(self):
     """
-    Construct the rop_vertex objects that this binding network can have,
-      directly, without feasibility test.
+    Construct the rop_vertex objects that this binding network can have, directly, without feasibility test.
 
-    Parameters
-    ----------
-    None.
+    Args:
+        None.
 
-    Returns
-    -------
-    None. The vertices are recorded in self.vertex_dict and by updating
-      the vertex objects.
+    Returns:
+        None. The vertices are recorded in self.vertex_dict and by updating the vertex objects.
     """
     # We construct the vertices by iteratively construct all the possible
     # dominance vector (perm).
@@ -1897,28 +1598,15 @@ class binding_network:
 
   def vertex_constrained_construct(self,opt_constraints,chart='xak'):
     """
-    Assuming self.vertex_dict is already computed, for given 
-      opt_constraints, this function computes whether the vertices
-      are feasible under these constraints, update 
-      rop_vertex.is_feasible for each vertex, and update each
-      vertex's feasible neighbors (stored in 
-      vertex.neighbors_constrined_dict) and return
-      is_feasible_dict, a dictionary of {perm:is_feasible} pairs.
+    Assuming self.vertex_dict is already computed, for given opt_constraints, this function computes whether the vertices are feasible under these constraints, updates rop_vertex.is_feasible for each vertex, and updates each vertex's feasible neighbors (stored in vertex.neighbors_constrained_dict). It returns is_feasible_dict, a dictionary of {perm: is_feasible} pairs.
     This function calls vertex_list_feasibility_test.
 
-    Parameters
-    ----------
-    opt_constraints : list of cvxpy inequalities
-      List of constraints under which vertices are tested for feasibility.
-    chart : str, optional
-      A string with value from {'x','xak','tk'} that specifies the 
-        chart that the opt_constraints are described in.
+    Args:
+        opt_constraints (list of cvxpy inequalities): List of constraints under which vertices are tested for feasibility.
+        chart (str, optional): A string with value from {'x', 'xak', 'tk'} that specifies the chart that the opt_constraints are described in. Defaults to None.
 
-    Returns
-    -------
-    is_feasible_dict : dictionary
-      A dictinoary of {perm:is_feasible} pairs for whether a vertex
-        is feasible.
+    Returns:
+        dict: A dictionary of {perm: is_feasible} pairs indicating whether a vertex is feasible.
     """
     # for the given opt_constraints, test for each vertex whether it is feasible
     # under opt_constraints, and create a vertex dictionary for feasible vertices
@@ -1947,25 +1635,16 @@ class binding_network:
 
   def vertex_list_feasibility_test(self,opt_constraints,chart='xak'):
     """
-    Given opt_constraints, test all the vertices for their feasibility
-      and return is_feasible_dict.
+    Given opt_constraints, test all the vertices for their feasibility and return is_feasible_dict.
     This function is called by vertex_constrained_construct.
-    It can also be directly called to test for feasibility without
-      storing or finding feasible neighbors.
+    It can also be directly called to test for feasibility without storing or finding feasible neighbors.
 
-    Parameters
-    ----------
-    opt_constraints : list of cvxpy inequalities
-      List of constraints under which vertices are tested for feasibility.
-    chart : str, optional
-      A string with value from {'x','xak','tk'} that specifies the 
-        chart that the opt_constraints are described in.
+    Args:
+        opt_constraints (list of cvxpy inequalities): List of constraints under which vertices are tested for feasibility.
+        chart (str, optional): A string with value from {'x', 'xak', 'tk'} that specifies the chart that the opt_constraints are described in. Defaults to None.
 
-    Returns
-    -------
-    is_feasible_dict : dictionary
-      A dictinoary of {perm:is_feasible} pairs for whether a vertex
-        is feasible.
+    Returns:
+        dict: A dictionary of {perm: is_feasible} pairs indicating whether a vertex is feasible.
     """
     # for the given opt_constraints, test each of the vertex whether it is feasible
     is_feasible_fin={}
@@ -1983,45 +1662,30 @@ class binding_network:
 
   def sampling_over_vertex_hull(self,nsample,vertex_perm_list=[],is_finite_only=False, chart='x',logmin=-6,logmax=6,margin=0,c_mat_extra=[],c0_vec_extra=[]):
     """
-    Randomly sample points in the log space of chart variables,
-      but instead of log-uniform, we first assign points to each vertex
-      in an even fashion, then sample uniformly within each vertex.
+    Randomly sample points in the log space of chart variables, but instead of log-uniform, we first assign points to each vertex in an even fashion, then sample uniformly within each vertex.
 
-    Parameters
-    ----------
-    nsample : int
-      The number of points to be sampled in the space of chart variables.
-      This is divided evenly to all the vertices of this binding network.
-    is_finite_only : bool, optional
-      Useful only when vertex_perm_list=[], so that all vertices are sampled.
-      If True, only finite vertices are sampled. This also allows chart 'tk' to work.
-      If False, both finite and infinite vertices are sampled.
-      Defaults to False.
-    vertex_perm_list : list of vertex's perm tuples, optional
-      The list of perms indexing the vertices to be sampled.
-      e.g. [(0,1,2),(0,1,3)].
-      Defaults to empty list []. If empty, sample all vertices.
-    chart : str, optional
-      A string indicating the chart that the opt_constraints are specified in.
-      Choices are 'x','xak', and 'tk'. Defaults to 'x'.
-    margin : float, optional
-      The vertex's feasibility conditions are inequalities, 
-        of the form c_mat*logx + c0_vec > margin (e.g. in 'x' chart),
-        where margin is the positive threshold used here. Default to 0.
-      This can be adjusted to be stronger/weaker requirements on dominance.
-    logmin : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    logmax : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
+    Args:
+        nsample (int): The number of points to be sampled in the space of chart variables.
+            This is divided evenly to all the vertices of this binding network.
+        is_finite_only (bool, optional): Useful only when vertex_perm_list=[], so that all vertices are sampled.
+            If True, only finite vertices are sampled. This also allows chart 'tk' to work.
+            If False, both finite and infinite vertices are sampled. Defaults to False.
+        vertex_perm_list (list of vertex's perm tuples, optional): The list of perms indexing the vertices to be sampled.
+            e.g. [(0,1,2), (0,1,3)]. Defaults to empty list []. If empty, sample all vertices.
+        chart (str, optional): A string indicating the chart that the opt_constraints are specified in.
+            Choices are 'x', 'xak', and 'tk'. Defaults to 'x'.
+        margin (float, optional): The vertex's feasibility conditions are inequalities,
+            of the form c_mat * logx + c0_vec > margin (e.g. in 'x' chart),
+            where margin is the positive threshold used here. Defaults to 0.
+            This can be adjusted to be stronger/weaker requirements on dominance.
+        logmin (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to every variable.
+            They could also be vectors of length dim_n.
+        logmax (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to every variable.
+            They could also be vectors of length dim_n.
 
-    Returns
-    -------
-    sample_vertex_dict : dictionary of ndarray with shape nsample-by-dim_n
-      Key is the perm of each vertex. Value is the sample for that vertex.
+    Returns:
+        dict: A dictionary of ndarray with shape (nsample, dim_n).
+            Key is the perm of each vertex. Value is the sample for that vertex.
     """
     
     # calculate number of vertex to be plotted and the dictionary of vertices.
@@ -2047,55 +1711,33 @@ class binding_network:
 
   def sampling_over_activity_regime_hull(self,nsample,b_tuple,regime_key_list=[],is_finite_only=False,is_feasible_only=False,chart='x',logmin=-6,logmax=6,margin=0,c_mat_extra=[],c0_vec_extra=[]):
     """
-    Randomly sample points in the log space of chart variables for each
-      dom_regime for a given activity.
-      but instead of log-uniform, we first assign points to each vertex
-      in an even fashion, then sample uniformly within each vertex.
+    Randomly sample points in the log space of chart variables for each dom_regime for a given activity, but instead of log-uniform, we first assign points to each vertex in an even fashion, then sample uniformly within each vertex.
 
-    Parameters
-    ----------
-    nsample : int
-      The number of points to be sampled in the space of chart variables.
-      This is divided evenly to all the vertices of this binding network.
-    b_tuple : tuple of length dim_n
-      The b_tuple indicating the activity whose dom_regimes we are 
-        interested in sampling.
-    is_finite_only : bool, optional
-      If True, only finite dom_regimes are sampled.
-      If False, both finite and infinite dom_regimes are sampled.
-      Defaults to False.
-    regime_key_list : list of dominance regime's keys, optional
-      The list of keys for dom_regimes indexing the dom_regimes 
-        to be sampled. e.g. [((0,1,2),7),((0,1,3),7)].
-      If empty, sample all dom_regimes.
-      Defaults to empty list []. 
-    is_feasible_only : bool, optional
-      If True, only feasible dom_regimes are sampled.
-      If False, all dom_regimes in regime_key_list (or all in this 
-        activity) are sampled.
-      Each dom_regime's is_feasible tag come from results of the most
-        recent feasibility test.
-    chart : str, optional
-      A string indicating the chart that the opt_constraints are specified in.
-      Choices are 'x','xak', and 'tk'. Defaults to 'x'.
-    margin : float, optional
-      The vertex's feasibility conditions are inequalities, 
-        of the form c_mat*logx + c0_vec > margin (e.g. in 'x' chart),
-        where margin is the positive threshold used here. Default to 0.
-      This can be adjusted to be stronger/weaker requirements on dominance.
-    logmin : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
-    logmax : float or ndarray vector
-      logmin, logmax could be scalars, then it's the same value applied to 
-        every variable. 
-      They could also be vectors of length dim_n.
+    Args:
+        nsample (int): The number of points to be sampled in the space of chart variables.
+            This is divided evenly to all the vertices of this binding network.
+        b_tuple (tuple of length dim_n): The b_tuple indicating the activity whose dom_regimes we are interested in sampling.
+        is_finite_only (bool, optional): If True, only finite dom_regimes are sampled.
+            If False, both finite and infinite dom_regimes are sampled. Defaults to False.
+        regime_key_list (list of dominance regime's keys, optional): The list of keys for dom_regimes indexing the dom_regimes to be sampled.
+            e.g. [((0,1,2),7), ((0,1,3),7)]. If empty, sample all dom_regimes. Defaults to empty list [].
+        is_feasible_only (bool, optional): If True, only feasible dom_regimes are sampled.
+            If False, all dom_regimes in regime_key_list (or all in this activity) are sampled.
+            Each dom_regime's is_feasible tag comes from results of the most recent feasibility test.
+        chart (str, optional): A string indicating the chart that the opt_constraints are specified in.
+            Choices are 'x', 'xak', and 'tk'. Defaults to 'x'.
+        margin (float, optional): The vertex's feasibility conditions are inequalities,
+            of the form c_mat * logx + c0_vec > margin (e.g. in 'x' chart),
+            where margin is the positive threshold used here. Defaults to 0.
+            This can be adjusted to be stronger/weaker requirements on dominance.
+        logmin (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to every variable.
+            They could also be vectors of length dim_n.
+        logmax (float or ndarray vector): logmin, logmax could be scalars, then it's the same value applied to every variable.
+            They could also be vectors of length dim_n.
 
-    Returns
-    -------
-    sample_vertex_dict : dictionary of ndarray with shape nsample-by-dim_n
-      Key is the perm of each vertex. Value is the sample for that vertex.
+    Returns:
+        dict: A dictionary of ndarray with shape (nsample, dim_n).
+            Key is the perm of each vertex. Value is the sample for that vertex.
     """
     pass
     # # calculate number of vertex to be plotted and the dictionary of vertices.
@@ -2255,24 +1897,21 @@ class binding_network:
 # BELOW ARE SYMBOLIC METHODS for the binding network
 
   def logder_sym(self,a_mat=np.array([]),is_saved=True):
-    """calculate the symbolic log derivative matrix of dlog(x)/dlog(a_mat*x,k).
+    """
+    Calculate the symbolic log derivative matrix of dlog(x)/dlog(a_mat @ x, k).
 
-    Parameters
-    ----------
-    a_mat : numpy array, optional
-      Matrix defining the variables log derivative is taken in terms of.
-      Assumes all entries are non-negative, and each row has at least one positive entry.
-      Optional, defaults to l_mat of the binding network.
-    is_saved: 'bool', optional
-      To save the resulting logdermat as parameter ld_sym of the binding network or not.
-      Defaults to True.
-    Returns
-    -------
-    logdermat: sympy symbolic matrix
-       Symbolic log derivative matrix for x to (t_sym_temp, k_sym) expressed in terms of x.
+    Args:
+        a_mat (numpy array, optional): Matrix defining the variables log derivative is taken in terms of.
+            Assumes all entries are non-negative, and each row has at least one positive entry.
+            Optional, defaults to l_mat of the binding network.
+        is_saved (bool, optional): To save the resulting logdermat as parameter ld_sym of the binding network or not.
+            Defaults to True.
 
-    Note that if the provided a_mat yields a noninvertible matrix, then the function will
-    return logdermat as a matrix of zeros (with the appropriate size).
+    Returns:
+        sympy.Matrix: Symbolic log derivative matrix for x to (t_sym_temp, k_sym) expressed in terms of x.
+
+    Note:
+        If the provided a_mat yields a noninvertible matrix, then the function will return logdermat as a matrix of zeros (with the appropriate size).
     """
     if not np.any(a_mat): # no a_mat argument is given
       a_mat=self.l_mat
@@ -2323,17 +1962,14 @@ class binding_network:
     return xc2xak_subs_list
 
   def t2x_sym(self,expr):
-    """input a symbolic expression containing totals t, map it to x
+    """
+    Input a symbolic expression containing totals t, and map it to x.
 
-    Parameters
-    ----------
-    expr : sympy symbolic expression
-       A symbolic expression to be converted
+    Args:
+        expr (sympy symbolic expression): A symbolic expression to be converted.
 
-    Returns
-    -------
-    expr_x: sympy symbolic expression
-       The symbolic expression after conversion.
+    Returns:
+        sympy symbolic expression: The symbolic expression after conversion.
     """
     # calculate the substitutions map for totals to species
     try: expr_x=expr.subs(self.t2x)
@@ -2344,17 +1980,14 @@ class binding_network:
     return expr_x
 
   def xc2xak_sym(self,expr):
-    """input a symbolic expression containing complex species x^c, map it to x^a and k.
+    """
+    Input a symbolic expression containing complex species x^c, and map it to x^a and k.
 
-    Parameters
-    ----------
-    expr : sympy symbolic expression
-       A symbolic expression to be converted
+    Args:
+        expr (sympy symbolic expression): A symbolic expression to be converted.
 
-    Returns
-    -------
-    expr_xak: sympy symbolic expression
-       The symbolic expression after conversion.
+    Returns:
+        sympy symbolic expression: The symbolic expression after conversion.
     """
     assert self.is_atomic, "this operation requires the binding network to be atomic"
     # calculate the substitutions map for complex species to atomic species and k's, if it does not exist.
@@ -2366,20 +1999,16 @@ class binding_network:
     return expr_xak
 
   def logder_sym_activity(self,b_vec_sym,a_mat=np.array([])):
-    """compute the log derivative of a linear sum of x, i.e. dlog(b_vec_sym*x)/dlog(tp,k), tp=a_mat*x
+    """
+    Compute the log derivative of a linear sum of x, i.e. dlog(b_vec_sym * x)/dlog(tp, k), where tp = a_mat * x.
 
-    Parameters
-    ----------
-    b_vec_sym : sympy symbolic vector, shape n-by-1
-      A vector of symbolic expressions corresponding to coefficients to be summed
-    a_mat: numpy array, optional
-      The matrix denoting the variables a_mat*x that the log derivative is taken with respect to.
-      Defaults to self.l_mat.
+    Args:
+        b_vec_sym (sympy symbolic vector): A vector of symbolic expressions corresponding to coefficients to be summed. Shape is (n, 1).
+        a_mat (numpy array, optional): The matrix denoting the variables a_mat * x that the log derivative is taken with respect to.
+            Defaults to self.l_mat.
 
-    Returns
-    -------
-    ld_sym_sum: sympy vector of symbolic expression
-       The symbolic log derivative  dlog(b_vec_sym*x)/dlog(tp,k), tp=a_mat*x.
+    Returns:
+        sympy vector: The symbolic log derivative dlog(b_vec_sym * x)/dlog(tp, k), where tp = a_mat * x.
     """
     if not np.any(a_mat): # no a_mat argument is given
       a_mat=self.l_mat
