@@ -7,57 +7,37 @@ class catalysis_network:
             s_mat,
             xcat_sym=np.array([]),
             vcat_sym=np.array([])):
-    """Initiate a catalysis_network object
+    """
+    Initiate a catalysis_network object.
 
-    Parameters
-    ----------
-    s_mat : numpy array, n_cat-by-m_cat
-      The stoichiometry matrix defining the catalysis network.
-      Not necessarily full rank.
-      n_cat is the number of rows, i.e. the number of variables for catalysis
-        dynamics, same as length of xcat
-      m_cat is the number of columns, i.e. the number of catalysis reactions,
-        same as length of kcat.
-    xcat_sym : numpy array of sympy symbols, optional
-      Symbols for xcat variables. Length n_cat.
-    vcat_sym : numpy array of sympy symbols, optional
-      Symbols for vcat variables, fluxes of catalysis reactions. Length m_cat.
+    Args:
+        s_mat (numpy array): The stoichiometry matrix defining the catalysis network. Shape is (n_cat, m_cat).
+            Not necessarily full rank.
+            n_cat is the number of rows, i.e. the number of variables for catalysis dynamics, same as length of xcat.
+            m_cat is the number of columns, i.e. the number of catalysis reactions, same as length of kcat.
+        xcat_sym (numpy array of sympy symbols, optional): Symbols for xcat variables. Length n_cat.
+        vcat_sym (numpy array of sympy symbols, optional): Symbols for vcat variables, fluxes of catalysis reactions. Length m_cat.
     """
     self.s_mat=s_mat
     self.dim_ncat,self.dim_mcat=s_mat.shape
 
 class binding_and_catalysis:
   def __init__(self,bn,cn,kbind,kcat,total_const,total_const_idx,xcat_in_total_idx,cat_active_in_xbind_idx):
-    """Initiate a binding_and_catalysis object, which contains a binding network
-    and a catalysis network, together with links between them.
-    On the catalysis time scale, the binding constants kbind don't change,
-        and the
+    """
+    Initiate a binding_and_catalysis object, which contains a binding network and a catalysis network, together with links between them.
+    On the catalysis time scale, the binding constants kbind don't change.
 
-    Parameters
-    ----------
-    bn : a binding_network object
-      The binding network that specifies how the catalysis fluxes are regulated.
-        It defines the map from xcat (catalysis variables) to concentrations
-          of catalytic active species responsible for the catalysis fluxes.
-        Flux v = kcat * cat_active
-      It has to contain all the catalytic active species of the catalysis reactions,
-        even if there are reactions that has constant rates. (That correspond to
-        a binding reaction that is just one atomic entry with constant total.)
-
-    cn : a catalysis_network object
-      The catalysis network that specifies how the fluxes change molecular concentrations.
-
-
-    xcat_in_total_idx: a tuple of integers, length <= self.dim_ncat
-      indices for xcat as totals in the binding network bn.
-      Length could be less than self.dim_ncat, since not necessarily all xcat
-        are contained in totals.
-      The xcat contained in totals NEED TO COME FIRST in the ordering of xcat.
-      xcat=np.concatenate((total[xcat_in_total_idx], xcat[]]
-
-    cat_active_in_xbind_idx: a tuple of integers, length self.dim_mcat
-      Indices that the active species for the catalysis reactions correspond to
-        in the xbind species in the binding network bn.
+    Args:
+        bn (binding_network object): The binding network that specifies how the catalysis fluxes are regulated.
+            It defines the map from xcat (catalysis variables) to concentrations of catalytic active species responsible for the catalysis fluxes.
+            Flux v = kcat * cat_active.
+            It has to contain all the catalytic active species of the catalysis reactions, even if there are reactions that have constant rates. (That corresponds to a binding reaction that is just one atomic entry with constant total.)
+        cn (catalysis_network object): The catalysis network that specifies how the fluxes change molecular concentrations.
+        xcat_in_total_idx (tuple of integers): Indices for xcat as totals in the binding network bn. Length is <= self.dim_ncat.
+            Length could be less than self.dim_ncat, since not necessarily all xcat are contained in totals.
+            The xcat contained in totals NEED TO COME FIRST in the ordering of xcat.
+            xcat = np.concatenate((total[xcat_in_total_idx], xcat[...])).
+        cat_active_in_xbind_idx (tuple of integers): Indices that the active species for the catalysis reactions correspond to in the xbind species in the binding network bn. Length is self.dim_mcat.
     """
     self.bn=bn
     self.kbind=kbind # binding network's binding constants are fixed at the catalysis timescale
@@ -80,21 +60,16 @@ class binding_and_catalysis:
     #   they don't change, so they can be plugged in as just a parameter.
 
   def dlogxcatdt(self,logxcat,a_mat):
-    """Calculate dlogxcat/dt for at a given logxcat point.
+    """
+    Calculate dlogxcat/dt for at a given logxcat point.
 
-    Parameters
-    ----------
-    logxcat : numpy array, length dim_ncat
-      The vector of xcat in log10 indicating the current state of catalysis
-        dynamics.
-      Entries of xcat corresponding to totals in the binding network need to
-        come first.
-    a_mat : numpy array, bn.dim_d by bn.dim_n
-      Matrix defining totals in terms of xbind in the binding network.
-      Correspond to conserved quantities at the binding timescale.
-      The default choice should be bn.l_mat.
-      Can be modified from bn.l_mat to describe restrictions or asymptotic
-        limits of the system.
+    Args:
+        logxcat (numpy array): The vector of xcat in log10 indicating the current state of catalysis dynamics. Length is dim_ncat.
+            Entries of xcat corresponding to totals in the binding network need to come first.
+        a_mat (numpy array): Matrix defining totals in terms of xbind in the binding network. Shape is (bn.dim_d, bn.dim_n).
+            Correspond to conserved quantities at the binding timescale.
+            The default choice should be bn.l_mat.
+            Can be modified from bn.l_mat to describe restrictions or asymptotic limits of the system.
     """
     cn=self.cn
     bn=self.bn
