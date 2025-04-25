@@ -25,6 +25,7 @@ plugins:
       handlers:
         python:
           paths: [src]
+  - mkdocs-jupyter
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -50,6 +51,6 @@ extra_css:
   - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/default.min.css
 
 nav:
-  - Home: index.md
-  - Tutorial: tutorials.md
-  # - Reference: reference.md
+  - Tutorial: index.md
+  - API: api.md
+  - Examples: examples/usage_v0_1_0.ipynb
